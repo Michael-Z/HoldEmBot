@@ -1,0 +1,15 @@
+/*
+ * Selection, crossover, and mutation
+ * 
+ * individual = strategy of what to do in certain situations (i.e. always call) 
+ * 
+ * crossover = take some elements from strategy 1 and some from strategy 2 and form 
+ * 				strategy 3
+ * mutation = random change in strategy every 5 generations 
+ * 
+ * fitness = total amount of money won after x (100?) hands
+ * 
+ * selection = play the population against one another and the 4 fittest produce offspring
+ * 
+ * generation = train for 9 players first, then 6, then 5, then 4, 3, 2 
+ */
