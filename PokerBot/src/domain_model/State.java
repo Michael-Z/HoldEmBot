@@ -7,58 +7,63 @@ import java.util.*;
  */
 public class State {
 	
-	//i.e. "sb, bb, utg, button, etc"
-	private BbLeftBucket bbLeft;
-	//TODO getter and setter^
-	private Hand hand;
-	private PersonBucket personalitiesLeft;
-	//private int numPlayersLeft;	
-	//i.e. "preflop, flop, turn, river"
-	private Stage currStage;
-	private List<Player> players;
-	private int pos;
-	private Set<Card> communityCards;
+	//Decision Variables
+	private Stage st;
+	private OddsBucket odds;
+	private int maxPlayers;
+	private int position;
+	private BbLeftBucket blindsLeft;
 	private PotSizeBucket potSize;
-	//TODO getter and setter^
-	private double prevBet; /*in the current stage */
-	private Set<Player> aggressors;
-	//iterate through first aggressor, whether contain tight player, loose player, unkown
-	//TODO getter and setter^
-	private double oddsOfWinning;
-	private OddsBucket oddsBucket;
-	//TODO getter setter^
-	//TODO write function for ^
-	private double bbVal;
-	private int numPlayersLeft;
-	private int numPlayersCalled;
-	private final int maxPlayers;
+	private PersonBucket personalitiesLeft;
+	private BetSizeBucket betToMatch;
+	
+	//Game variables
+	private double bigBlindValue;
+	private Hand hand;
+	private List<Player> players;
+	private Set<Card> communityCards;
+	private boolean isTurnToAct;
+	
+	//Double representation for bucket
+	private double betToMatchD;
+	private double oddsD;
+	
+	
 	//TODO write getters and setters for^                                                                      
 	//TODO data_source object is parameter
 	//TODO write state update function
-	private BetSizeBucket betToMatch;
+	
 	public State() {
 		this.players = new LinkedList<Player>();
-		
-		//dummy
-		maxPlayers = 9;
+		this.communityCards = new TreeSet<Card>();
 	}
 	
 	//getters
-	public BbLeftBucket bbLeft() {return this.bbLeft;}
+	public BbLeftBucket bbLeft() {return this.blindsLeft;}
 	public Hand hand() {return this.hand;}
 	public int numPlayers() {return this.players.size();}
-	public Stage currStage() {return this.currStage;}
+	public Stage currStage() {return this.st;}
 	public List<Player> players() {return this.players;}
-	public int pos() {return this.pos;}
+	public int pos() {return this.position;}
 	public Set<Card> comCards() {return this.communityCards;}
 	public PotSizeBucket potSize() {return this.potSize;}
-	public double prevBet() {return this.prevBet;}
-	public OddsBucket odds() {return this.oddsBucket;}
-	public double bbVal() {return this.bbVal;}
+	public double prevBet() {return this.betToMatchD;}
+	public OddsBucket odds() {return this.odds;}
+	public double bbVal() {return this.bigBlindValue;}
 	public int maxPlayers() {return this.maxPlayers;}
 	public BetSizeBucket betSize() {return this.betToMatch;}
 	public PersonBucket persLeft() {return this.personalitiesLeft;}
 	
+	
+	//setters
+	//public void setBbLeft(double d) {this.bbLeft = d;}
+	public void setHand(Hand h) {this.hand = h;}
+	public void setStage(Stage s) {this.st = s;}
+	//public void setPotSize(double d) {this.potSize = d;}
+	public void setPrevBet(double d) {this.betToMatchD = d;}
+	public void setOdds(double d) {this.oddsD = d;}
+	public void setBbVal(double d) {this.bigBlindValue = d;}
+
 	public int numPlayersLeft() {
 		int i = 0;
 		for (Player p : players) {
@@ -67,15 +72,6 @@ public class State {
 		}
 		return i;
 	}
-	
-	//setters
-	//public void setBbLeft(double d) {this.bbLeft = d;}
-	public void setHand(Hand h) {this.hand = h;}
-	public void setStage(Stage s) {this.currStage = s;}
-	//public void setPotSize(double d) {this.potSize = d;}
-	public void setPrevBet(double d) {this.prevBet = d;}
-	public void setOdds(double d) {this.oddsOfWinning = d;}
-	public void setBbVal(double d) {this.bbVal = d;}
 	
 	public void addPlayer(int pos, Player p) {
 		players.add(pos, p);

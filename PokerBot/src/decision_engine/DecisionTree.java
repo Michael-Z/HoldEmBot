@@ -1,5 +1,7 @@
 package decision_engine;
 import utils.*;
+import utils.OddsBucket;
+
 import java.util.*;
 import domain_model.*;
 
@@ -7,8 +9,6 @@ import domain_model.*;
 public class DecisionTree {
 	public Node<Integer> head;
 	public State currState;
-	public static Map<Double, OddsBucket> oddsbuckets;
-	//TODO ^set up and make all private
 	
 	public DecisionTree(State state) {
 		head = new Node<Integer>(0, 0, null);
@@ -16,10 +16,11 @@ public class DecisionTree {
 	}
 	
 	//helper function to select random action
+	//TODO elimante sm and bb
 	public Action act() {
 		int n = Action.values().length - 1;
 		int i = (int) Math.round(Math.random() * n);
-		return Action.values()[i];
+		return Action.values()[i-2];
 	}
 	
 	/*
@@ -98,40 +99,47 @@ public class DecisionTree {
 				n1.add(n2);
 				
 				//max num players var
-				for (int p = 1; p <= 8; p++) {
+				for (int p = 1; p <= 9; p++) {
 					Node<Integer> n3 = new Node<Integer>(3, p, null);
 					n2.add(n3);
 					
-					//Big blinds left var
-					for (BbLeftBucket  b : BbLeftBucket.values()) {
-						Node<BbLeftBucket> n4 = new Node<BbLeftBucket>(4, b, null);
+					//position variable
+					for (int pos = 1; pos <= p; p++) {
+						Node<Integer> n4 = new Node<Integer>(4, pos, null);
 						n3.add(n4);
-						
-						//size of pot var
-						for (PotSizeBucket pb : PotSizeBucket.values()) {
-							Node<PotSizeBucket> n5 = new Node<PotSizeBucket>(5, pb, null);
+											
+						//Big blinds left var
+						for (BbLeftBucket  b : BbLeftBucket.values()) {
+							Node<BbLeftBucket> n5 = new Node<BbLeftBucket>(5, b, null);
 							n4.add(n5);
 							
-							//personality types left in game
-							for (PersonBucket perb : PersonBucket.values()) {
-								Node<PersonBucket> n6 = new Node<PersonBucket>(6, perb, null);
+							//size of pot var
+							for (PotSizeBucket pb : PotSizeBucket.values()) {
+								Node<PotSizeBucket> n6 = new Node<PotSizeBucket>(6, pb, null);
 								n5.add(n6);
 								
-								//current bet to match
-								for (BetSizeBucket bsb : BetSizeBucket.values()) {
-									Node<BetSizeBucket> n7 = new Node<BetSizeBucket>(7, bsb, null);
+								//personality types left in game
+								for (PersonBucket perb : PersonBucket.values()) {
+									Node<PersonBucket> n7 = new Node<PersonBucket>(7, perb, null);
 									n6.add(n7);
 									
-									//all players still in and their previous action
-									specifyPlayers(n7, 1, p);								
+									//current bet to match
+									for (BetSizeBucket bsb : BetSizeBucket.values()) {
+										Node<BetSizeBucket> n8 = new Node<BetSizeBucket>(8, bsb, null);
+										n7.add(n8);
+										
+										//all players still in and their previous action
+										specifyPlayers(n8, 1, p);								
+									}
 								}
-							}
-						}						
+							}						
+						}
 					}
 				}
 			}
 		}
 	}
+	
 	//TODO use lvl to classify the player and action specification and to match those
 	private boolean matches(Node<?> node) {
 		int lvl = node.lvl();
@@ -148,20 +156,24 @@ public class DecisionTree {
 			return (Integer) node.stateVar() == currState.maxPlayers();
 		}
 		if (lvl == 4) {
-			return node.stateVar() == currState.bbLeft();
+			return (Integer) node.stateVar() == currState.pos();
 		}
 		if (lvl == 5) {
-			return node.stateVar() == currState.potSize();
+			return node.stateVar() == currState.bbLeft();
 		}
 		if (lvl == 6) {
-			return node.stateVar() == currState.persLeft();
+			return node.stateVar() == currState.potSize();
 		}
 		if (lvl == 7) {
+			return node.stateVar() == currState.persLeft();
+		}
+		if (lvl == 8) {
 			return node.stateVar() == currState.betSize();
 		}
 		
 		return false;
 	}
+	
 	//create container for currState variables
 	private Node<?> downLevel(Node<?> node) throws Exception {	
 		for (Node<?> n : node.children()) {
@@ -178,7 +190,7 @@ public class DecisionTree {
 		while(!it.children().isEmpty()) {
 			it = downLevel(it);	
 		}
-		return Action.CHECKFOLD;
+		return it.action();
 	}
 	//TODO : iterator function
 }
