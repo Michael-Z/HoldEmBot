@@ -1,6 +1,9 @@
 package decision_engine;
-import utils.*;
 import utils.OddsBucket;
+import utils.Action;
+import utils.BetSizeBucket;
+import utils.PotSizeBucket;
+import utils.*;
 
 import java.util.*;
 import domain_model.*;
@@ -11,16 +14,16 @@ public class DecisionTree {
 	public State currState;
 	
 	public DecisionTree(State state) {
-		head = new Node<Integer>(0, 0, null);
+		head = new Node<Integer>(null, 0, null);
 		this.currState = state;
 	}
 	
 	//helper function to select random action
-	//TODO elimante sm and bb
-	public Action act() {
-		int n = Action.values().length - 1;
-		int i = (int) Math.round(Math.random() * n);
-		return Action.values()[i-2];
+	//disregards sm and bb actions
+	public static Action act() {
+		int n = Action.values().length - 2;
+		int i = (int) Math.floor(Math.random() * n);
+		return Action.values()[i];
 	}
 	
 	/*
@@ -31,23 +34,23 @@ public class DecisionTree {
 	private Set<Node<Action>> specifyPrevAction(Node<Boolean> n, boolean isFinal) {
 		Set<Node<Action>> prevActions = new TreeSet<Node<Action>>();	
 		for (Action a1: Action.values()) {
-			Node<Action> n1 = new Node<Action>(n.lvl() + 1, a1, null);
+			Node<Action> n1 = new Node<Action>(VarType.PREF, a1, null);
 			n.add(n1);
 			
 			for (Action a2: Action.values()) {
-				Node<Action> n2 = new Node<Action>(n.lvl() + 2, a2, null);
+				Node<Action> n2 = new Node<Action>(VarType.FLOP, a2, null);
 				n1.add(n2);
 				
 				for (Action a3: Action.values()) {
-					Node<Action> n3 = new Node<Action>(n.lvl() + 3, a3, null);
+					Node<Action> n3 = new Node<Action>(VarType.TURN, a3, null);
 					n2.add(n3);
 					
 					for (Action a4: Action.values()) {
 						Node<Action> n4;
 						if (isFinal)
-							n4 = new Node<Action>(n.lvl() + 4, a4, act());
+							n4 = new Node<Action>(VarType.RIVER, a4, act());
 						else 
-							n4 = new Node<Action>(n.lvl() + 5, a4, null);
+							n4 = new Node<Action>(VarType.RIVER, a4, null);
 						
 						n3.add(n4);
 						prevActions.add(n4);
@@ -65,17 +68,17 @@ public class DecisionTree {
 	 */
 	private void specifyPlayers(Node<?> n, int player, int max) {
 		 if (player == max) {
-			Node<Boolean> trueNode = new Node<Boolean>(n.lvl() + player, true, null);
+			Node<Boolean> trueNode = new Node<Boolean>(VarType.PLAYERISIN, true, null);
 			n.add(trueNode);
 			specifyPrevAction(trueNode, true);
-			Node<Boolean> falseNode = new Node<Boolean>(n.lvl() + player, false, act());
+			Node<Boolean> falseNode = new Node<Boolean>(VarType.PLAYERISIN, false, act());
 			n.add(falseNode);
 		}
 		else {
-			Node<Boolean> trueNode = new Node<Boolean>(n.lvl() + player, true, null);
+			Node<Boolean> trueNode = new Node<Boolean>(VarType.PLAYERISIN, true, null);
 			n.add(trueNode);
 			Set<Node<Action>> prevAction = specifyPrevAction(trueNode, false);
-			Node<Boolean> falseNode = new Node<Boolean>(n.lvl() + player, false, null);
+			Node<Boolean> falseNode = new Node<Boolean>(VarType.PLAYERISIN, false, null);
 			n.add(falseNode);
 			
 			for (Node<Action> no : prevAction) {
@@ -90,42 +93,42 @@ public class DecisionTree {
 	public void create() {
 		//Stage  var
 		for (Stage s : Stage.values()) {
-			Node<Stage> n1 = new Node<Stage>(1, s, null);
+			Node<Stage> n1 = new Node<Stage>(VarType.STAGE, s, null);
 			head.add(n1);
 			
 			//Odds of winning var
 			for (OddsBucket o : OddsBucket.values()) {
-				Node<OddsBucket> n2 = new Node<OddsBucket>(2, o, null);
+				Node<OddsBucket> n2 = new Node<OddsBucket>(VarType.ODDS, o, null);
 				n1.add(n2);
 				
 				//max num players var
 				for (int p = 1; p <= 9; p++) {
-					Node<Integer> n3 = new Node<Integer>(3, p, null);
+					Node<Integer> n3 = new Node<Integer>(VarType.TOTALNUMPLAYERS, p, null);
 					n2.add(n3);
 					
 					//position variable
 					for (int pos = 1; pos <= p; p++) {
-						Node<Integer> n4 = new Node<Integer>(4, pos, null);
+						Node<Integer> n4 = new Node<Integer>(VarType.POSITION, pos, null);
 						n3.add(n4);
 											
 						//Big blinds left var
 						for (BbLeftBucket  b : BbLeftBucket.values()) {
-							Node<BbLeftBucket> n5 = new Node<BbLeftBucket>(5, b, null);
+							Node<BbLeftBucket> n5 = new Node<BbLeftBucket>(VarType.BLINDSLEFT, b, null);
 							n4.add(n5);
 							
 							//size of pot var
 							for (PotSizeBucket pb : PotSizeBucket.values()) {
-								Node<PotSizeBucket> n6 = new Node<PotSizeBucket>(6, pb, null);
+								Node<PotSizeBucket> n6 = new Node<PotSizeBucket>(VarType.POTSIZE, pb, null);
 								n5.add(n6);
 								
 								//personality types left in game
 								for (PersonBucket perb : PersonBucket.values()) {
-									Node<PersonBucket> n7 = new Node<PersonBucket>(7, perb, null);
+									Node<PersonBucket> n7 = new Node<PersonBucket>(VarType.PERSONALITIESLEFT, perb, null);
 									n6.add(n7);
 									
 									//current bet to match
 									for (BetSizeBucket bsb : BetSizeBucket.values()) {
-										Node<BetSizeBucket> n8 = new Node<BetSizeBucket>(8, bsb, null);
+										Node<BetSizeBucket> n8 = new Node<BetSizeBucket>(VarType.BETSIZE, bsb, null);
 										n7.add(n8);
 										
 										//all players still in and their previous action
@@ -140,45 +143,61 @@ public class DecisionTree {
 		}
 	}
 	
-	//TODO use lvl to classify the player and action specification and to match those
+	//matches currState to correct decision node
 	private boolean matches(Node<?> node) {
-		int lvl = node.lvl();
-		if (lvl == 0) {
+		VarType v = node.varType();
+		if (v == null) {
 			return true;
 		}
-		if (lvl == 1) {
+		if (v == VarType.STAGE) {
 			return node.stateVar() == currState.currStage();
 		}
-		if (lvl == 2) {
-			return node.stateVar() == currState.currStage();
+		if (v == VarType.ODDS) {
+			return node.stateVar() == currState.odds();
 		}
-		if (lvl == 3) {
-			return (Integer) node.stateVar() == currState.maxPlayers();
+		if (v == VarType.TOTALNUMPLAYERS) {
+			return (Integer) node.stateVar() == currState.numTotalPlayers();
 		}
-		if (lvl == 4) {
+		if (v == VarType.POSITION) {
 			return (Integer) node.stateVar() == currState.pos();
 		}
-		if (lvl == 5) {
+		if (v == VarType.BLINDSLEFT) {
 			return node.stateVar() == currState.bbLeft();
 		}
-		if (lvl == 6) {
+		if (v == VarType.POTSIZE) {
 			return node.stateVar() == currState.potSize();
 		}
-		if (lvl == 7) {
+		if (v == VarType.PERSONALITIESLEFT) {
 			return node.stateVar() == currState.persLeft();
 		}
-		if (lvl == 8) {
+		if (v == VarType.BETSIZE) {
 			return node.stateVar() == currState.betSize();
 		}
-		
 		return false;
 	}
 	
-	//create container for currState variables
 	private Node<?> downLevel(Node<?> node) throws Exception {	
 		for (Node<?> n : node.children()) {
-			if (matches(n))
-				return n;
+			if (n.varType() != VarType.PLAYERISIN) {
+				if (matches(n))
+					return n;
+			}
+			
+			//downLevel for all player possibilities
+			//TODO figure out logic
+			for (int i = 0; i < currState.numTotalPlayers(); i++) {
+				if (currState.players().get(i).isInStage()) {
+					Iterator<Node<?>> it = n.children().iterator();
+					while (it.hasNext()) {
+						Node<?> boolNode = it.next();
+						if ((boolean) boolNode.stateVar())
+							n = boolNode;
+						
+						else
+							n = it.next();
+					}
+				}
+			}
 		}
 		//TODO change to return null or to an exception I've created
 		throw new Exception();
@@ -193,4 +212,6 @@ public class DecisionTree {
 		return it.action();
 	}
 	//TODO : iterator function
+	
+	
 }

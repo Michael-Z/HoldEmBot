@@ -10,7 +10,7 @@ public class State {
 	//Decision Variables
 	private Stage st;
 	private OddsBucket odds;
-	private int maxPlayers;
+	private int numTotalPlayers;
 	private int position;
 	private BbLeftBucket blindsLeft;
 	private PotSizeBucket potSize;
@@ -22,6 +22,7 @@ public class State {
 	private Hand hand;
 	private List<Player> players;
 	private Set<Card> communityCards;
+	private int maxPlayers;
 	private boolean isTurnToAct;
 	
 	//Double representation for bucket
@@ -50,7 +51,7 @@ public class State {
 	public double prevBet() {return this.betToMatchD;}
 	public OddsBucket odds() {return this.odds;}
 	public double bbVal() {return this.bigBlindValue;}
-	public int maxPlayers() {return this.maxPlayers;}
+	public int numTotalPlayers() {return this.numTotalPlayers;}
 	public BetSizeBucket betSize() {return this.betToMatch;}
 	public PersonBucket persLeft() {return this.personalitiesLeft;}
 	
