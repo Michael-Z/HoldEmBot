@@ -33,6 +33,7 @@ public class State {
 	//TODO write getters and setters for^                                                                      
 	//TODO data_source object is parameter
 	//TODO write state update function
+	//TODO write odds function
 	
 	public State() {
 		this.players = new LinkedList<Player>();
@@ -54,6 +55,7 @@ public class State {
 	public int numTotalPlayers() {return this.numTotalPlayers;}
 	public BetSizeBucket betSize() {return this.betToMatch;}
 	public PersonBucket persLeft() {return this.personalitiesLeft;}
+	public boolean isTurnToAct() {return this.isTurnToAct;}
 	
 	
 	//setters
@@ -64,11 +66,12 @@ public class State {
 	public void setPrevBet(double d) {this.betToMatchD = d;}
 	public void setOdds(double d) {this.oddsD = d;}
 	public void setBbVal(double d) {this.bigBlindValue = d;}
+	public void setIsTurnToAct(boolean b) {this.isTurnToAct = b;}
 
 	public int numPlayersLeft() {
 		int i = 0;
 		for (Player p : players) {
-			if (p.isInStage())
+			if (p.isIn())
 				i++;
 		}
 		return i;
@@ -80,6 +83,10 @@ public class State {
 	
 	public void removePlayer(Player p) {
 		players.remove(p);
+	}
+
+	public void update() {
+		// TODO Auto-generated method stub	
 	}
 	
 }

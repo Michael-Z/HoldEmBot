@@ -4,18 +4,29 @@ import utils.Action;
 import utils.BetSizeBucket;
 import utils.PotSizeBucket;
 import utils.*;
+import domain_model.Player;
 
 import java.util.*;
 import domain_model.*;
 
 
 public class DecisionTree {
-	public Node<Integer> head;
-	public State currState;
+	private Node<Integer> head;
+	private State currState;
+	
+	//possible actions of player preflop
+	private static List<Action> actionListPref = Arrays.asList(Action.values());
+	//possible actions of player rest of game
+	private static List<Action> actionList = Arrays.asList(Action.values());
 	
 	public DecisionTree(State state) {
 		head = new Node<Integer>(null, 0, null);
 		this.currState = state;
+		
+		actionListPref.add(null);
+		actionList.remove(Action.BB);
+		actionList.remove(Action.SB);
+		actionList.add(null);
 	}
 	
 	//helper function to select random action
@@ -31,21 +42,22 @@ public class DecisionTree {
 	 * a player; 'isFinal' parameter is used to specify whether or not
 	 * the player is final or not
 	 */
-	private Set<Node<Action>> specifyPrevAction(Node<Boolean> n, boolean isFinal) {
-		Set<Node<Action>> prevActions = new TreeSet<Node<Action>>();	
-		for (Action a1: Action.values()) {
+	private List<Node<Action>> specifyPrevAction(Node<Boolean> n, boolean isFinal) {
+		List<Node<Action>> prevActions = new LinkedList<Node<Action>>();
+		
+		for (Action a1: actionListPref) {
 			Node<Action> n1 = new Node<Action>(VarType.PREF, a1, null);
 			n.add(n1);
 			
-			for (Action a2: Action.values()) {
+			for (Action a2: actionList) {
 				Node<Action> n2 = new Node<Action>(VarType.FLOP, a2, null);
 				n1.add(n2);
 				
-				for (Action a3: Action.values()) {
+				for (Action a3: actionList) {
 					Node<Action> n3 = new Node<Action>(VarType.TURN, a3, null);
 					n2.add(n3);
 					
-					for (Action a4: Action.values()) {
+					for (Action a4: actionList) {
 						Node<Action> n4;
 						if (isFinal)
 							n4 = new Node<Action>(VarType.RIVER, a4, act());
@@ -77,7 +89,7 @@ public class DecisionTree {
 		else {
 			Node<Boolean> trueNode = new Node<Boolean>(VarType.PLAYERISIN, true, null);
 			n.add(trueNode);
-			Set<Node<Action>> prevAction = specifyPrevAction(trueNode, false);
+			List<Node<Action>> prevAction = specifyPrevAction(trueNode, false);
 			Node<Boolean> falseNode = new Node<Boolean>(VarType.PLAYERISIN, false, null);
 			n.add(falseNode);
 			
@@ -101,7 +113,7 @@ public class DecisionTree {
 				Node<OddsBucket> n2 = new Node<OddsBucket>(VarType.ODDS, o, null);
 				n1.add(n2);
 				
-				//max num players var
+				//total num players var
 				for (int p = 1; p <= 9; p++) {
 					Node<Integer> n3 = new Node<Integer>(VarType.TOTALNUMPLAYERS, p, null);
 					n2.add(n3);
@@ -176,28 +188,33 @@ public class DecisionTree {
 		return false;
 	}
 	
-	private Node<?> downLevel(Node<?> node) throws Exception {	
-		for (Node<?> n : node.children()) {
-			if (n.varType() != VarType.PLAYERISIN) {
-				if (matches(n))
-					return n;
-			}
+	private Node<?> downLevel(Node<?> node) throws Exception {
+		if (node.varType() == VarType.BETSIZE) {
 			
-			//downLevel for all player possibilities
-			//TODO figure out logic
+			//iterates through all players
 			for (int i = 0; i < currState.numTotalPlayers(); i++) {
-				if (currState.players().get(i).isInStage()) {
-					Iterator<Node<?>> it = n.children().iterator();
-					while (it.hasNext()) {
-						Node<?> boolNode = it.next();
-						if ((boolean) boolNode.stateVar())
-							n = boolNode;
-						
-						else
-							n = it.next();
+				Node<?> trueNode = node.children().get(0);
+				Node<?> falseNode = node.children().get(1);
+				Player player = currState.players().get(i);
+				if (player.isIn()) {
+					node = trueNode;
+					
+					//if the player is in, iterates through all prevAction
+					for (int j = 0; j < player.getPrevAction().size(); j++) {
+						for (Node<?> actionNode : node.children()) {
+							if (actionNode.stateVar() == player.getPrevAction().get(j)) {
+								node = actionNode;
+							}
+						}
 					}
-				}
+				} else
+					node = falseNode;		
 			}
+			return node;
+		}
+		for (Node<?> n : node.children()) {
+			if (matches(n))
+				return n;
 		}
 		//TODO change to return null or to an exception I've created
 		throw new Exception();
@@ -211,7 +228,47 @@ public class DecisionTree {
 		}
 		return it.action();
 	}
-	//TODO : iterator function
+	//TODO will the comparison of object work?
+	//may have to create VarType class and inherit to each specific
+	//varType!!!!!!!!!
+	private Node<?> iterate(Node<?> n, Object o) throws Exception {
+		for (Node<?> no : n.children()) {
+			if (no.stateVar() == o) {
+				return no;
+			}
+		}
+		throw new Exception();
+	}
 	
-	
+	public Node<?> getState(Stage s, OddsBucket o, int n, int p, BbLeftBucket b, PotSizeBucket psz,
+							PersonBucket persl, BetSizeBucket bsz, List<Player> pl)  throws Exception{
+		Node<?> node = this.head;
+		node = iterate(node, s);
+		node = iterate(node, o);
+		node = iterate(node, n);
+		node = iterate(node, p);
+		node = iterate(node, b);
+		node = iterate(node, psz);
+		node = iterate(node, persl);
+		node = iterate(node, bsz);
+		
+		for (int i = 0; i < pl.size(); i++) {
+			Node<?> trueNode = node.children().get(0);
+			Node<?> falseNode = node.children().get(1);
+			Player player = pl.get(i);
+			if (player.isIn()) {
+				node = trueNode;			
+				//if the player is in, iterates through all prevAction
+				for (int j = 0; j < player.getPrevAction().size(); j++) {
+					for (Node<?> actionNode : node.children()) {
+						if (actionNode.stateVar() == player.getPrevAction().get(j)) {
+							node = actionNode;
+						}
+					}
+				}
+			} else
+				node = falseNode;		
+		}
+		return node;
+	}
 }

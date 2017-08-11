@@ -6,13 +6,13 @@ public class Node<T> {
 	private final VarType varType;
 	private final T stateVar;
 	private Action action;
-	private Set<Node<?>> children;
+	private List<Node<?>> children;
 	
 	public Node(VarType v, T stateVar, Action a) {
 		this.varType = v;
 		this.stateVar = stateVar;
 		this.action = a;
-		this.children = new TreeSet<Node<?>>();
+		this.children = new LinkedList<Node<?>>();
 	}
 	
 	public void add(Node<?> n) {
@@ -31,7 +31,7 @@ public class Node<T> {
 		return this.stateVar;
 	}
 	
-	public Set<Node<?>> children() {
+	public List<Node<?>> children() {
 		return this.children;
 	}
 }
